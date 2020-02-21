@@ -5,11 +5,13 @@ const bodyParser = require('koa-body');
 const mongoose = require('mongoose');
 
 const players = require('./routes/players');
+const states = require('./routes/states');
 
 const app = new Koa();
 
 app.use(bodyParser());
 app.use(players.routes());
+app.use(states.routes());
 app.use(jsoned());
 
 mongoose.connect(
@@ -17,4 +19,8 @@ mongoose.connect(
   { useNewUrlParser: true }
 )
 
-app.listen(5000, () => console.log('Server Started...'));
+app.listen(5000, 
+  async () => {
+    console.log('Server Started...')
+}
+);

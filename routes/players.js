@@ -2,6 +2,30 @@ const Router = require('koa-router');
 const router = new Router();
 const player = require('../models/Player');
 
+let counterscore = 0;
+
+const updateScore = async (scoreInput, id) => {
+    let dataFetch;
+    await Player.findByIdAndUpdate(
+        id,
+        {
+            $inc: {
+                score: scoreInput
+            }
+        }
+    )
+    .then((data) => {
+        dataFetch = data;
+    })
+    .catch(err => {
+        dataFetch = 'error: ' + err;
+    })
+    return dataFetch;
+}
+
+router.get('/counter', async ctx => {
+    ctx.body = counterscore;
+})
 
 router.get('/api/players', async ctx => {
     await player.find()
@@ -45,27 +69,41 @@ router.delete('/api/player/:id', async ctx => {
 })
 
 router.put('/api/player/:id', async ctx => {
-    if (!ctx.request.body.score) {
-        ctx.body = {
-            error: 'Bad Data'
-        }
-    } else {
-        await Player.findOneAndUpdate(
-            { _id:ctx.params.id },
-            { score: ctx.request.body.score }
-        )
-        .then(() => {
-            ctx.body = {status:'Score Updated'}
+    counterscore++;
+    if ((counterscore%500) === 0) {
+        await updateScore(250,ctx.params.id)
+        .then(data => {
+            ctx.body = data
         })
         .catch(err => {
             ctx.body = 'error: ' + err
         })
-    }
+    } else if ((counterscore%100) === 0) {
+        await updateScore(40,ctx.params.id)
+        .then(data => {
+            ctx.body = data
+        })
+        .catch(err => {
+            ctx.body = 'error: ' + err
+        })
+    } else if ((counterscore%10) === 0) {
+        await updateScore(5,ctx.params.id)
+        .then(data => {
+            ctx.body = data
+        })
+        .catch(err => {
+            ctx.body = 'error: ' + err
+        })
+    } else {
+        await updateScore(-1,ctx.params.id)
+        .then(data => {
+            ctx.body = data
+        })
+        .catch(err => {
+            ctx.body = 'error: ' + err
+        })
+    } 
+        
 })
-
-/*
-db.players.insert({username:USERNAME, score:20})
-db.players.update({_id:ID},{$inc:{score:n}});
-*/
 
 module.exports = router;
