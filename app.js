@@ -2,6 +2,7 @@ const Koa = require('koa');
 const Router = require('koa-router');
 const jsoned = require('koa-json');
 const bodyParser = require('koa-body');
+const cors = require('@koa/cors');
 const mongoose = require('mongoose');
 
 const players = require('./routes/players');
@@ -9,6 +10,7 @@ const states = require('./routes/states');
 
 const app = new Koa();
 
+app.use(cors());
 app.use(bodyParser());
 app.use(players.routes());
 app.use(states.routes());
