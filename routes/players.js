@@ -37,8 +37,9 @@ const updateScore = async (scoreInput, id, reset) => {
 }
 }
 
-router.get('/counter', async ctx => {
-    ctx.body = counterscore;
+
+router.get('/api/counter', async ctx => {
+    ctx.body = {counter: counterscore};
 })
 
 router.get('/api/players', async ctx => {
@@ -51,8 +52,17 @@ router.get('/api/players', async ctx => {
     })
 })
 
-//Create Player/User/Account
+router.get('/api/playerinfo/:id', async ctx => {
+    await player.findById(ctx.params.id)
+    .then(player => {
+        ctx.body = player
+    })
+    .catch(err => {
+        ctx.body = 'error: ' + err
+    })
+})
 
+//Create Player/User/Account
 router.post('/api/players', async ctx => {
     if(!ctx.request.body.username){
         ctx.body = {
@@ -72,56 +82,93 @@ router.post('/api/players', async ctx => {
     }
 })
 
-//Server Side Game Logic
+//Reset player to 20 points
+router.post('/api/reset',  async ctx => {
+    console.log('hellow')
+    let rstData = {
+        message: 'You have been given additional 20 points. Use them wisely.',
+        gameState: true
+    };
+    if(!ctx.request.body.id) {
+        ctx.body = {
+            error: 'Missing Data'
+        }
+    } else {
+        await updateScore(20,ctx.request.body.id, true)
+        .then(data => {
+            rstData.body = data
+            rstData.body.player.score = rstData.body.player.score + 20
+            ctx.body = rstData;
+        })
+    }
+})
 
+//Server Side Game Logic
 router.post('/api/player/', async ctx => {
-    console.log(ctx.request.body.score)
+    let winData = {
+        message: '',
+        gameState: true
+    };
     if(!ctx.request.body.id || !ctx.request.body.score) {
         ctx.body = {
             error: 'Missing Data'
         }
-    } else if (ctx.request.body.score <= 0) {
-        await updateScore(20,ctx.request.body.id,true)
-        .then(data => {
-            ctx.body = data
-        })
-        .catch(err => {
-            ctx.body = 'error: ' + err
-        })
     } else {
     counterscore++;
     if ((counterscore%500) === 0) {
-        await updateScore(250,ctx.request.body.id, false)
+        winData.message = 'Wow! You won 250 points! Congratulations!'
+        await updateScore(249,ctx.request.body.id, false)
         .then(data => {
-            ctx.body = data
+            winData.body = data
+            winData.body.player.score = winData.body.player.score + 250
+            ctx.body = winData
         })
         .catch(err => {
             ctx.body = 'error: ' + err
         })
     } else if ((counterscore%100) === 0) {
-        await updateScore(40,ctx.request.body.id, false)
+        winData.message = "Congratulations. You won 40 points. Aren't you lucky."
+        await updateScore(39,ctx.request.body.id, false)
         .then(data => {
-            ctx.body = data
+            winData.body = data
+            winData.body.player.score = winData.body.player.score + 40
+            ctx.body = winData
         })
         .catch(err => {
             ctx.body = 'error: ' + err
         })
     } else if ((counterscore%10) === 0) {
-        await updateScore(5,ctx.request.body.id, false)
+        winData.message = 'Small winnings of 5 points achieved. Hooray.'
+        await updateScore(4,ctx.request.body.id, false)
         .then(data => {
-            ctx.body = data
+            winData.body = data
+            winData.body.player.score = winData.body.player.score + 5
+            console.log(winData)
+            ctx.body = winData
         })
         .catch(err => {
             ctx.body = 'error: ' + err
         })
     } else {
-        await updateScore(-1,ctx.request.body.id, false)
-        .then(data => {
-            ctx.body = data
-        })
-        .catch(err => {
-            ctx.body = 'error: ' + err
-        })
+        if (ctx.request.body.score > 1) {
+            winData.message = "Sorry, you didn't win this time."
+            await updateScore(-1,ctx.request.body.id, false)
+            .then(data => {
+                winData.body = data
+                ctx.body = winData
+            })
+            .catch(err => {
+                ctx.body = 'error: ' + err
+            })
+        } else {
+            winData.message = 'No more points! Plead for forgiveness and points?';
+            winData.gameState = false;
+            winData.body = {
+                player: {
+                    score: 0
+            }}
+            ctx.body = winData
+    }
     }
 } 
         
